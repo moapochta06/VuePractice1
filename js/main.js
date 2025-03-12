@@ -1,3 +1,73 @@
+let eventBus = new Vue()
+
+Vue.component('product-tabs', {
+    props: {
+        reviews: {
+            type: Array,
+            required: false
+        },
+        shipping: {
+            type: String,
+            required: true
+        },
+        details: {
+                type: Array,
+                required: true
+            }
+    },
+    template: `
+    <div>   
+      <ul>
+        <span class="tab"
+              :class="{ activeTab: selectedTab === tab }"
+              v-for="(tab, index) in tabs"
+              @click="selectedTab = tab"
+        >{{ tab }}</span>
+      </ul>
+      <div v-show="selectedTab === 'Reviews'">
+        <p v-if="!reviews.length">There are no reviews yet.</p>
+        <ul>
+          <li v-for="review in reviews">
+          <p>{{ review.name }}</p>
+          <p>Rating: {{ review.rating }}</p>
+          <p>{{ review.review }}</p>
+          </li>
+        </ul>
+      </div>
+      <div v-show="selectedTab === 'Make a Review'">
+        <product-review></product-review>
+      </div>
+      <div v-show="selectedTab === 'Shipping'">
+        <shipping :shipping="shipping"></shipping>
+      </div>
+      <div v-show="selectedTab === 'Details'">
+        <product-details :details="details"></product-details>
+      </div>
+    </div>
+    <div 
+    >
+    `,
+    data() {
+        return {
+            tabs: ['Reviews', 'Make a Review','Shipping', 'Details'],
+            selectedTab: 'Reviews'
+        }
+    },
+
+})
+
+Vue.component('shipping',{
+    props: {
+        shipping: {
+            type: String,
+            required: true
+        }
+    },
+    template: `
+    <p>Shipping: {{ shipping }}</p>
+    `
+})
+
 Vue.component('product-review', {
     template: `
     <form class="review-form" @submit.prevent="onSubmit">
@@ -48,34 +118,35 @@ Vue.component('product-review', {
             name: null,
             review: null,
             rating: null,
-            recommend:null,
+            recommend: null,
             errors: []
         }
     },
-    methods:{
+    methods: {
         onSubmit() {
-            if(this.name && this.review && this.rating) {
+            if (this.name && this.review && this.rating) {
                 let productReview = {
                     name: this.name,
                     review: this.review,
                     rating: this.rating
                 }
-                this.$emit('review-submitted', productReview)
+                eventBus.$emit('review-submitted', productReview)
+
                 this.name = null
                 this.review = null
                 this.rating = null
-                this.recomend = null
+                this.recommend = null
             } else {
-                if(!this.name) this.errors.push("Name required.")
-                if(!this.review) this.errors.push("Review required.")
-                if(!this.rating) this.errors.push("Rating required.")
-                if(!this.recommend) this.errors.push("Recommendation required.")
+                if (!this.name) this.errors.push("Name required.")
+                if (!this.review) this.errors.push("Review required.")
+                if (!this.rating) this.errors.push("Rating required.")
+                if (!this.recommend) this.errors.push("Recommendation required.")
             }
-         }         
-            
-        }    
- })
- 
+        }
+
+    }
+})
+
 Vue.component('product-details', {
     props: {
         details: {
@@ -96,7 +167,7 @@ Vue.component('product', {
             type: Boolean,
             required: true
         }
-    }, 
+    },
     template: `
     <div class="product">
         <div class="product-image">
@@ -106,8 +177,7 @@ Vue.component('product', {
             <h1>{{ title }}</h1>
             <p v-if="inStock">In stock</p>
             <p v-else>Out of Stock</p>
-            <p>Shipping: {{ shipping }}</p> 
-            <product-details :details="details"></product-details>
+             
             <div
                     class="color-box"
                     v-for="(variant, index) in variants"
@@ -116,7 +186,6 @@ Vue.component('product', {
                     @mouseover="updateProduct(index)"
             >
             </div>
-        </div>
         <button
                 @click="addToCart"
                 :disabled="!inStock"
@@ -129,18 +198,10 @@ Vue.component('product', {
         >
             Delete
         </button>
-        <div>
-            <h2>Reviews</h2>
-            <p v-if="!reviews.length">There are no reviews yet.</p>
-            <ul>
-            <li v-for="review in reviews">
-            <p>{{ review.name }}</p>
-            <p>Rating: {{ review.rating }}</p>
-            <p>{{ review.review }}</p>
-            </li>
-            </ul>
         </div>
-        <product-review @review-submitted="addReview"></product-review>
+        
+        
+        <product-tabs :reviews="reviews" :shipping="shipping" :details="details"></product-tabs>
     </div>`,
     data() {
         return {
@@ -169,7 +230,7 @@ Vue.component('product', {
     methods: {
         addToCart() {
             this.$emit('add-to-cart', this.variants[this.selectedVariant].variantId)
-         },   
+        },
         deleteFromCart() {
             this.$emit('remove-from-cart', this.variants[this.selectedVariant].variantId)
         },
@@ -177,10 +238,6 @@ Vue.component('product', {
             this.selectedVariant = index;
             console.log(index);
         },
-        addReview(productReview) {
-            this.reviews.push(productReview)
-         }
-         
     },
     computed: {
         title() {
@@ -198,8 +255,13 @@ Vue.component('product', {
             } else {
                 return 2.99
             }
-         }
-         
+        }
+
+    },
+    mounted() {
+        eventBus.$on('review-submitted', productReview => {
+            this.reviews.push(productReview)
+        })
     }
 })
 
@@ -218,10 +280,10 @@ let app = new Vue({
             if (index !== -1) {
                 this.cart.splice(index, 1);
             }
-        }        
+        }
     }
- })
- 
+})
+
 
 
 
