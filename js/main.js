@@ -1,5 +1,41 @@
 let eventBus = new Vue()
 
+Vue.component('star-rating', {
+    props: {
+      rating: {
+        type: Number,
+        required: true
+      }
+    },
+    template: `
+      <div class="star-rating">
+        <span
+          v-for="star in 5"
+          :key="star"
+          class="star"
+          @click="setRating(star)"
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            :fill="star <= rating ? 'gold' : 'gray'"
+          >
+            <path
+              d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
+            />
+          </svg>
+        </span>
+      </div>
+    `,
+    methods:{
+        setRating(star) {
+            this.$emit('update-rating', star); 
+        }
+    }
+    
+  });
+
 Vue.component('product-tabs', {
     props: {
         reviews: {
@@ -11,9 +47,9 @@ Vue.component('product-tabs', {
             required: true
         },
         details: {
-                type: Array,
-                required: true
-            }
+            type: Array,
+            required: true
+        }
     },
     template: `
     <div>   
@@ -29,7 +65,7 @@ Vue.component('product-tabs', {
         <ul>
           <li v-for="review in reviews">
           <p>{{ review.name }}</p>
-          <p>Rating: {{ review.rating }}</p>
+          <star-rating :rating="review.rating"></star-rating>
           <p>{{ review.review }}</p>
           </li>
         </ul>
@@ -49,14 +85,14 @@ Vue.component('product-tabs', {
     `,
     data() {
         return {
-            tabs: ['Reviews', 'Make a Review','Shipping', 'Details'],
+            tabs: ['Reviews', 'Make a Review', 'Shipping', 'Details'],
             selectedTab: 'Reviews'
         }
     },
 
 })
 
-Vue.component('shipping',{
+Vue.component('shipping', {
     props: {
         shipping: {
             type: String,
@@ -96,17 +132,12 @@ Vue.component('product-review', {
     <label for="no">No</label>
     </div>
     
-
-    <p>
-    <label for="rating">Rating:</label>
-    <select id="rating" v-model.number="rating">
-        <option>5</option>
-        <option>4</option>
-        <option>3</option>
-        <option>2</option>
-        <option>1</option>
-    </select>
+     <p>
+        <label for="rating">Rating:</label>
+        <star-rating :rating="rating" @update-rating="setRating"></star-rating>
     </p>
+
+
 
     <p>
     <input type="submit" value="Submit"> 
@@ -142,8 +173,10 @@ Vue.component('product-review', {
                 if (!this.rating) this.errors.push("Rating required.")
                 if (!this.recommend) this.errors.push("Recommendation required.")
             }
+        },
+        setRating(star) {
+            this.rating = star;
         }
-
     }
 })
 
